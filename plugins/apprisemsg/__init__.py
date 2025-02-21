@@ -22,7 +22,7 @@ class AppriseMsg(_PluginBase):
     # 插件图标
     plugin_icon = "Ntfy_A.png"
     # 插件版本
-    plugin_version = "0.2"
+    plugin_version = "0.3"
     # 插件作者
     plugin_author = "lethargicScribe"
     # 作者主页
@@ -62,7 +62,18 @@ class AppriseMsg(_PluginBase):
             if self._enabled and self._url:
                 # 初始化 apprise客户端实例
                 self.apobj = apprise.Apprise()
-                self.apobj.add(self._url)
+                # 配置生效
+                server_urls = self._url.split("\n")
+                for server_url in server_urls:
+                    if not server_url:
+                        continue
+                    try:
+                        self.apobj.add(server_url)
+                    except Exception as err:
+                        logger.error(f"Apprise 通知渠道配置{err}")
+                        self.systemmessage.put(f"Apprise 通知渠道配置{err}", title="Apprise 通知")
+                        continue
+                                    
                 # 启动处理队列的后台线程
                 self.processing_thread = threading.Thread(target=self.process_queue)
                 self.processing_thread.daemon = True
@@ -129,13 +140,14 @@ class AppriseMsg(_PluginBase):
                                         'props': {
                                             'model': 'url',
                                             'label': 'URL',
-                                            'placeholder': 'gotify://hostname/token',
+                                            'rows': 10,
+                                            'placeholder': '一行一个通知渠道URL, 例如 gotify://hostname/token',
                                         }
                                     }
                                 ]
                             }
                         ]
-                    },
+                    },            
                     {
                         'component': 'VRow',
                         'content': [
