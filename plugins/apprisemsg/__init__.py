@@ -22,7 +22,7 @@ class AppriseMsg(_PluginBase):
     # 插件图标
     plugin_icon = "Ntfy_A.png"
     # 插件版本
-    plugin_version = "0.1"
+    plugin_version = "0.2"
     # 插件作者
     plugin_author = "lethargicScribe"
     # 作者主页
@@ -128,7 +128,7 @@ class AppriseMsg(_PluginBase):
                                         'component': 'VTextField',
                                         'props': {
                                             'model': 'url',
-                                            'label': '服务器',
+                                            'label': 'URL',
                                             'placeholder': 'gotify://hostname/token',
                                         }
                                     }
@@ -154,6 +154,50 @@ class AppriseMsg(_PluginBase):
                                             'label': '消息类型',
                                             'items': MsgTypeOptions
                                         }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        'component': 'VRow',
+                        'props': {
+                            'style': {
+                                'margin-top': '12px'
+                            },
+                        },
+                        'content': [
+                            {
+                                'component': 'VCol',
+                                'props': {
+                                    'cols': 12,
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VAlert',
+                                        'props': {
+                                            'type': 'success',
+                                            'variant': 'tonal'
+                                        },
+                                        'content': [
+                                            {
+                                                'component': 'span',
+                                                'text': '注意：详细 URL 配置说明请参考：'
+                                            },
+                                            {
+                                                'component': 'a',
+                                                'props': {
+                                                    'href': 'https://github.com/caronc/apprise/blob/master/README.md',
+                                                    'target': '_blank'
+                                                },
+                                                'content': [
+                                                    {
+                                                        'component': 'u',
+                                                        'text': 'README'
+                                                    }
+                                                ]
+                                            }
+                                        ]
                                     }
                                 ]
                             }
