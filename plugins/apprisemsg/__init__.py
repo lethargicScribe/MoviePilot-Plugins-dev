@@ -1,6 +1,6 @@
 import threading
 
-from gotify import Gotify
+import apprise
 
 from queue import Queue
 from time import time, sleep
@@ -14,21 +14,21 @@ from app.schemas.types import EventType, NotificationType
 from app.utils.http import RequestUtils
 
 
-class GotifyMsg(_PluginBase):
+class AppriseMsg(_PluginBase):
     # 插件名称
-    plugin_name = "gotify消息通知"
+    plugin_name = "Apprise 消息推送"
     # 插件描述
-    plugin_desc = "支持使用gotify发送消息通知。"
+    plugin_desc = "Apprise - 适用于几乎所有平台的推送通知！"
     # 插件图标
-    plugin_icon = "https://raw.githubusercontent.com/gotify/logo/refs/heads/master/gotify-logo.png"
+    plugin_icon = "Ntfy_A.png"
     # 插件版本
-    plugin_version = "1.1"
+    plugin_version = "0.1"
     # 插件作者
     plugin_author = "lethargicScribe"
     # 作者主页
     author_url = "https://github.com/lethargicScribe"
     # 插件配置项ID前缀
-    plugin_config_prefix = "gotifymsg_"
+    plugin_config_prefix = "Apprisemsg_"
     # 加载顺序
     plugin_order = 25
     # 可使用的用户级别
@@ -36,8 +36,7 @@ class GotifyMsg(_PluginBase):
 
     # 私有属性
     _enabled = False
-    _server = None
-    _token = None
+    _url= None
     _msgtypes = []
 
     # 消息处理线程
@@ -50,30 +49,27 @@ class GotifyMsg(_PluginBase):
     send_interval = 5
     # 退出事件
     __event = threading.Event()
-    # gotify实例
-    gotify = None
+    # apprise实例
+    apobj = None
 
     def init_plugin(self, config: dict = None):
         self.__event.clear()
         if config:
             self._enabled = config.get("enabled")
-            self._server = config.get("server")
-            self._token = config.get("token")
+            self._url = config.get("url")
             self._msgtypes = config.get("msgtypes") or []
 
-            if self._enabled and self._token and self._server:
-                # 初始化gotify客户端实例
-                self.gotify = Gotify(
-                    base_url = self._server,
-                    app_token = self._token,
-                )
+            if self._enabled and self._url:
+                # 初始化 apprise客户端实例
+                self.apobj = apprise.Apprise()
+                self.apobj.add(self._url)
                 # 启动处理队列的后台线程
                 self.processing_thread = threading.Thread(target=self.process_queue)
                 self.processing_thread.daemon = True
                 self.processing_thread.start()
 
     def get_state(self) -> bool:
-        return self._enabled and (True if self._server and self._token else False)
+        return self._enabled and (True if self._url else False)
 
     @staticmethod
     def get_command() -> List[Dict[str, Any]]:
@@ -131,25 +127,9 @@ class GotifyMsg(_PluginBase):
                                     {
                                         'component': 'VTextField',
                                         'props': {
-                                            'model': 'server',
+                                            'model': 'url',
                                             'label': '服务器',
-                                            'placeholder': 'https://gotify.example.com',
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                'component': 'VCol',
-                                'props': {
-                                    'cols': 12
-                                },
-                                'content': [
-                                    {
-                                        'component': 'VTextField',
-                                        'props': {
-                                            'model': 'token',
-                                            'label': 'gotify 令牌',
-                                            'placeholder': 'xxxxx',
+                                            'placeholder': 'gotify://hostname/token',
                                         }
                                     }
                                 ]
@@ -183,8 +163,7 @@ class GotifyMsg(_PluginBase):
             }
         ], {
             "enabled": False,
-            'server': '',
-            'token': '',
+            'url': '',
             'msgtypes': []
         }
 
@@ -241,13 +220,12 @@ class GotifyMsg(_PluginBase):
 
             # 尝试发送消息
             try:
-                self.gotify.create_message(
-                    text,
+                self.apobj.notify(
+                    body=text,
                     title=title,
-                    priority=0,
                 )
             except Exception as msg_e:
-                logger.error(f"gotify消息发送失败，{str(msg_e)}")
+                logger.error(f"apprise 消息发送失败，{str(msg_e)}")
 
             # 标记任务完成
             self.message_queue.task_done()
