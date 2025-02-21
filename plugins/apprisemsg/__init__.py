@@ -22,7 +22,7 @@ class AppriseMsg(_PluginBase):
     # 插件图标
     plugin_icon = "Ntfy_A.png"
     # 插件版本
-    plugin_version = "0.3"
+    plugin_version = "0.4"
     # 插件作者
     plugin_author = "lethargicScribe"
     # 作者主页
@@ -132,14 +132,13 @@ class AppriseMsg(_PluginBase):
                                 'component': 'VCol',
                                 'props': {
                                     'cols': 12,
-                                    'md': 6
                                 },
                                 'content': [
                                     {
-                                        'component': 'VTextField',
+                                        'component': 'VTextarea',
                                         'props': {
                                             'model': 'url',
-                                            'label': 'URL',
+                                            'label': '通知渠道URL',
                                             'rows': 10,
                                             'placeholder': '一行一个通知渠道URL, 例如 gotify://hostname/token',
                                         }
