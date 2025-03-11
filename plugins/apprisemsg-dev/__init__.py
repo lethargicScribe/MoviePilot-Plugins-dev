@@ -14,9 +14,9 @@ from app.schemas.types import EventType, NotificationType
 from app.utils.http import RequestUtils
 
 
-class AppriseMsg(_PluginBase):
+class AppriseMsgDev(_PluginBase):
     # 插件名称
-    plugin_name = "Apprise 消息推送 -dev"
+    plugin_name = "Apprise 消息推送 - dev"
     # 插件描述
     plugin_desc = "Apprise - 适用于几乎所有平台的推送通知！"
     # 插件图标
