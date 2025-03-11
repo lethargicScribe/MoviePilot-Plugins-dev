@@ -16,7 +16,7 @@ from app.utils.http import RequestUtils
 
 class AppriseMsg(_PluginBase):
     # 插件名称
-    plugin_name = "Apprise 消息推送"
+    plugin_name = "Apprise 消息推送 -dev"
     # 插件描述
     plugin_desc = "Apprise - 适用于几乎所有平台的推送通知！"
     # 插件图标
@@ -39,16 +39,6 @@ class AppriseMsg(_PluginBase):
     _url= None
     _msgtypes = []
 
-    # 消息处理线程
-    processing_thread = None
-    # 上次发送时间
-    last_send_time = 0
-    # 消息队列
-    message_queue = Queue()
-    # 消息发送间隔（秒）
-    send_interval = 5
-    # 退出事件
-    __event = threading.Event()
     # apprise实例
     apobj = None
 
@@ -74,10 +64,6 @@ class AppriseMsg(_PluginBase):
                         self.systemmessage.put(f"Apprise 通知渠道配置{err}", title="Apprise 通知")
                         continue
                                     
-                # 启动处理队列的后台线程
-                self.processing_thread = threading.Thread(target=self.process_queue)
-                self.processing_thread.daemon = True
-                self.processing_thread.start()
 
     def get_state(self) -> bool:
         return self._enabled and (True if self._url else False)
@@ -238,55 +224,31 @@ class AppriseMsg(_PluginBase):
         if not msg_body.get("title") and not msg_body.get("text"):
             logger.warn("标题和内容不能同时为空")
             return
+        # 处理消息内容
+        channel = msg_body.get("channel")
+        if channel:
+            return
+        msg_type: NotificationType = msg_body.get("type")
+        title = msg_body.get("title")
+        text = msg_body.get("text")
 
-        # 将消息加入队列
-        self.message_queue.put(msg_body)
-        logger.info("消息已加入队列等待发送")
+        # 检查消息类型是否已启用
+        if msg_type and self._msgtypes and msg_type.name not in self._msgtypes:
+            logger.info(f"消息类型 {msg_type.value} 未开启消息发送")
+            return
 
-    def process_queue(self):
-        """
-        处理队列中的消息，按间隔时间发送
-        """
-        while True:
-            if self.__event.is_set():
-                logger.info("消息发送线程正在退出...")
-                break
-            # 获取队列中的下一条消息
-            msg_body = self.message_queue.get()
+        # 尝试发送消息
+        try:
+            self.apobj.notify(
+                body=text,
+                title=title,
+            )
+        except Exception as msg_e:
+            logger.error(f"apprise 消息发送失败，{str(msg_e)}")
 
-            # 检查是否满足发送间隔时间
-            current_time = time()
-            time_since_last_send = current_time - self.last_send_time
-            if time_since_last_send < self.send_interval:
-                sleep(self.send_interval - time_since_last_send)
-
-            # 处理消息内容
-            channel = msg_body.get("channel")
-            if channel:
-                continue
-            msg_type: NotificationType = msg_body.get("type")
-            title = msg_body.get("title")
-            text = msg_body.get("text")
-
-            # 检查消息类型是否已启用
-            if msg_type and self._msgtypes and msg_type.name not in self._msgtypes:
-                logger.info(f"消息类型 {msg_type.value} 未开启消息发送")
-                continue
-
-            # 尝试发送消息
-            try:
-                self.apobj.notify(
-                    body=text,
-                    title=title,
-                )
-            except Exception as msg_e:
-                logger.error(f"apprise 消息发送失败，{str(msg_e)}")
-
-            # 标记任务完成
-            self.message_queue.task_done()
 
     def stop_service(self):
         """
         退出插件
         """
-        self.__event.set()
+        pass
